@@ -1,0 +1,99 @@
+# ===========================
+# ECOBIN - .gitignore
+# ===========================
+
+# --- OS Generated ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# --- IDEs & Editors ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# --- Obsidian ---
+.obsidian/
+
+# --- Python (Gateway / Raspberry Pi) ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+venv/
+env/
+.env
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
+# --- Node.js (Dashboard Web) ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# --- Arduino / PlatformIO ---
+.pio/
+.pioenvs/
+.piolibdeps/
+.clang_complete
+.gcc-flags.json
+
+# --- Compiled firmware ---
+*.bin
+*.hex
+*.elf
+
+# --- Database ---
+*.db
+*.sqlite
+*.sqlite3
+
+# --- Secrets & Credentials ---
+.env
+.env.local
+.env.production
+secrets.py
+config_local.py
+credentials.json
+*.pem
+*.key
+
+# --- Logs ---
+*.log
+logs/
+
+# --- 3D Printing (keep STL, ignore temp) ---
+*.gcode
+*.3mf.bak
+
+# --- Media (keep essential, ignore bulk) ---
+# Uncomment below if you want to ignore large media files
+# *.mp4
+# *.mov
+
+# --- Temporary files ---
+*.tmp
+*.temp
+*.bak
+*.orig
