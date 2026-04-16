@@ -118,9 +118,7 @@ class MQTTClient:
                 logger.debug(f"📥 Subscrito a: {topic}")
 
             # Anunciar que o gateway está online
-            self.publish(
-                self.config.Topics.SYSTEM_STATUS, "online", retain=True
-            )
+            self.publish(self.config.Topics.SYSTEM_STATUS, "online", retain=True)
         else:
             logger.error(f"❌ Falha na conexão MQTT: {reason_code}")
 

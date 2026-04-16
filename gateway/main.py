@@ -78,9 +78,7 @@ class EcobinGateway:
         try:
             # 1. Iniciar broker MQTT embutido (amqtt)
             logger.info("🔄 A iniciar broker MQTT embutido...")
-            self._broker_thread = threading.Thread(
-                target=self._run_broker, daemon=True
-            )
+            self._broker_thread = threading.Thread(target=self._run_broker, daemon=True)
             self._broker_thread.start()
 
             # Esperar que o broker arranque
@@ -104,6 +102,7 @@ class EcobinGateway:
         except Exception as e:
             logger.error(f"❌ Erro fatal: {e}")
             import traceback
+
             traceback.print_exc()
             self.db.log_event("error", str(e))
         finally:
@@ -185,6 +184,7 @@ class EcobinGateway:
         except Exception as e:
             logger.error(f"❌ Erro na classificação: {e}")
             import traceback
+
             traceback.print_exc()
             self.mqtt.publish(Config.Topics.SYSTEM_STATUS, "error")
             self.db.log_event("error", str(e))

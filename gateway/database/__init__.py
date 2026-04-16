@@ -152,15 +152,13 @@ class Database:
         """
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
-            rows = conn.execute(
-                """
+            rows = conn.execute("""
                 SELECT compartment, percentage 
                 FROM fill_levels 
                 WHERE id IN (
                     SELECT MAX(id) FROM fill_levels GROUP BY compartment
                 )
-                """
-            ).fetchall()
+                """).fetchall()
             return {row["compartment"]: row["percentage"] for row in rows}
 
     def get_stats(self):
@@ -170,9 +168,7 @@ class Database:
             dict: Estatísticas (total, por categoria, taxa média).
         """
         with sqlite3.connect(self.db_path) as conn:
-            total = conn.execute(
-                "SELECT COUNT(*) FROM classifications"
-            ).fetchone()[0]
+            total = conn.execute("SELECT COUNT(*) FROM classifications").fetchone()[0]
 
             by_category = dict(
                 conn.execute(

@@ -28,6 +28,7 @@ Regras:
 5. PRECISÃO EXTREMA DE MATERIAL: Analisa a textura da imagem detalhadamente. Distingue visualmente, por exemplo, um lenço de papel celulose (quebradiço) de uma toalhita húmida (tecido não-tecido tipo pano, elástico e sem brilho). O nome tem de ser o mais perito possível.
 """
 
+
 class WasteClassifier:
     """Classificador de resíduos usando Google Gemini 2.5 Flash."""
 
@@ -77,11 +78,17 @@ class WasteClassifier:
 
         return {
             "category": category,
-            "confidence": 0.9 if category != "indiferenciado" else 0.0, # Simplificação para OLED
+            "confidence": (
+                0.9 if category != "indiferenciado" else 0.0
+            ),  # Simplificação para OLED
             "description": result.get("oled", "Objeto"),
             "recyclable": category in ["plastico", "papel", "vidro"],
-            "angle": self.categories[category]["angle"] if category in self.categories else 270,
-            "points": result.get("pts", 0)
+            "angle": (
+                self.categories[category]["angle"]
+                if category in self.categories
+                else 270
+            ),
+            "points": result.get("pts", 0),
         }
 
     def _fallback_result(self, error_msg):
@@ -91,5 +98,5 @@ class WasteClassifier:
             "description": "Erro IA",
             "recyclable": False,
             "angle": 270,
-            "points": 0
+            "points": 0,
         }

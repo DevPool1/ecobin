@@ -27,20 +27,20 @@ class Config:
     # --- Tópicos MQTT ---
     class Topics:
         # ESP32-CAM → Gateway
-        CAM_STATUS = "ecobin/cam/status"         # online/offline
-        CAM_READY = "ecobin/cam/ready"           # waste_detected
+        CAM_STATUS = "ecobin/cam/status"  # online/offline
+        CAM_READY = "ecobin/cam/ready"  # waste_detected
 
         # Gateway → Todos
         CLASSIFICATION = "ecobin/classification"  # JSON resultado
-        SYSTEM_STATUS = "ecobin/system/status"    # idle/classifying/sorting/error
+        SYSTEM_STATUS = "ecobin/system/status"  # idle/classifying/sorting/error
 
         # Gateway → ESP32-WROOM (motor)
-        MOTOR_COMMAND = "ecobin/motor/command"    # rotate:0|90|180|270
-        SERVO_COMMAND = "ecobin/servo/command"    # open/close
+        MOTOR_COMMAND = "ecobin/motor/command"  # rotate:0|90|180|270
+        SERVO_COMMAND = "ecobin/servo/command"  # open/close
 
         # ESP32-WROOM → Gateway
-        MOTOR_STATUS = "ecobin/motor/status"      # done/error
-        FILL_LEVEL = "ecobin/fill/level"          # JSON {compartment, percentage}
+        MOTOR_STATUS = "ecobin/motor/status"  # done/error
+        FILL_LEVEL = "ecobin/fill/level"  # JSON {compartment, percentage}
 
     # --- ESP32-CAM ---
     ESP32_CAM_IP = os.getenv("ESP32_CAM_IP", "192.168.4.2")
@@ -63,7 +63,9 @@ class Config:
     }
 
     # --- Base de Dados ---
-    DATABASE_PATH = os.getenv("DATABASE_PATH", str(Path(__file__).parent / "database" / "ecobin.db"))
+    DATABASE_PATH = os.getenv(
+        "DATABASE_PATH", str(Path(__file__).parent / "database" / "ecobin.db")
+    )
 
     # --- Web Dashboard ---
     WEB_HOST = os.getenv("WEB_HOST", "0.0.0.0")
@@ -96,7 +98,9 @@ class Config:
         print(f"  MQTT Broker:  {cls.MQTT_BROKER_HOST}:{cls.MQTT_BROKER_PORT}")
         print(f"  ESP32-CAM:    {cls.ESP32_CAM_CAPTURE_URL}")
         print(f"  Gemini Model: {cls.GEMINI_MODEL}")
-        print(f"  API Key:      {'✅ Definida' if cls.GEMINI_API_KEY else '❌ Em falta'}")
+        print(
+            f"  API Key:      {'✅ Definida' if cls.GEMINI_API_KEY else '❌ Em falta'}"
+        )
         print(f"  Database:     {cls.DATABASE_PATH}")
         print(f"  Save Images:  {cls.SAVE_IMAGES}")
         print("=" * 40)
