@@ -1,8 +1,8 @@
 # ============================================
 # ECOBIN — Classificador de Resíduos (Gemini)
 # ============================================
-# Usa a API Google Gemini 2.0 Flash para
-# classificar resíduos a partir de imagens JPEG.
+# Usa JSON mode nativo do Gemini para respostas
+# estruturadas — menos tokens, mais fiável.
 # ============================================
 
 import json
@@ -15,33 +15,33 @@ from google.genai import types
 
 logger = logging.getLogger("ecobin.classifier")
 
-# Prompt estruturado para classificação de resíduos
-CLASSIFICATION_PROMPT = """Analisa esta imagem de um resíduo depositado num contentor inteligente.
+# Prompt curto — o schema JSON faz o resto
+CLASSIFICATION_PROMPT = (
+    "Classifica o resíduo na imagem. "
+    "Categorias: plastico, papel, vidro, organico, nao_reciclavel."
+)
 
-Classifica o resíduo numa das seguintes categorias:
-- "plastico" — garrafas, embalagens plásticas, sacos, copos plásticos
-- "papel" — papel, cartão, jornais, revistas, caixas de cartão
-- "vidro" — garrafas de vidro, frascos, copos de vidro
-- "organico" — restos de comida, cascas, folhas, resíduos biodegradáveis
-- "nao_reciclavel" — resíduos que não encaixam em nenhuma categoria acima
-
-Responde APENAS com um JSON válido no seguinte formato exato, sem markdown, sem código, sem explicações:
-{"category": "categoria_aqui", "confidence": 0.95, "description": "descrição curta do objeto", "recyclable": true}
-
-Regras:
-- "category" deve ser uma das 5 categorias acima (em minúsculas, sem acentos exceto em "plastico")
-- "confidence" deve ser um número entre 0.0 e 1.0
-- "description" deve ser uma descrição curta em português do objeto identificado
-- "recyclable" deve ser true para plastico/papel/vidro e false para organico/nao_reciclavel
-- Se a imagem não contiver um resíduo claro, responde com category "nao_reciclavel" e confidence baixa
-"""
+# Schema que o Gemini deve seguir (garante JSON válido)
+RESPONSE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "category": {
+            "type": "string",
+            "enum": ["plastico", "papel", "vidro", "organico", "nao_reciclavel"],
+        },
+        "confidence": {"type": "number"},
+        "description": {"type": "string"},
+        "recyclable": {"type": "boolean"},
+    },
+    "required": ["category", "confidence", "description", "recyclable"],
+}
 
 
 class WasteClassifier:
-    """Classificador de resíduos usando Google Gemini 2.0 Flash.
+    """Classificador de resíduos usando Google Gemini com JSON mode.
 
-    Recebe uma imagem JPEG e retorna a classificação
-    com categoria, confiança e descrição.
+    Usa response_mime_type="application/json" + response_schema
+    para respostas estruturadas — ~70% menos tokens que prompt text.
     """
 
     def __init__(self, config):
@@ -65,15 +65,8 @@ class WasteClassifier:
             jpeg_bytes: Bytes da imagem JPEG capturada pelo ESP32-CAM.
 
         Returns:
-            dict: Resultado da classificação com chaves:
-                - category (str): Categoria do resíduo
-                - confidence (float): Nível de confiança (0-1)
-                - description (str): Descrição do objeto
-                - recyclable (bool): Se é reciclável
-                - angle (int): Ângulo do carrossel para esta categoria
-
-        Raises:
-            Exception: Se a classificação falhar.
+            dict: Resultado com category, confidence, description,
+                  recyclable, angle.
         """
         try:
             # Converter bytes JPEG para imagem PIL
@@ -82,26 +75,21 @@ class WasteClassifier:
                 f"🔍 A classificar imagem ({image.size[0]}x{image.size[1]})..."
             )
 
-            # Chamar Gemini 2.0 Flash com imagem + prompt
+            # Chamar Gemini com JSON mode nativo
             response = self.client.models.generate_content(
                 model=self.model_name,
                 contents=[CLASSIFICATION_PROMPT, image],
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=RESPONSE_SCHEMA,
+                ),
             )
 
-            # Extrair e parsear resposta JSON
-            raw_text = response.text.strip()
-            logger.debug(f"Resposta bruta do Gemini: {raw_text}")
+            # Parse direto — JSON mode garante formato válido
+            result = json.loads(response.text)
 
-            # Limpar possíveis artefactos markdown (```json ... ```)
-            if raw_text.startswith("```"):
-                raw_text = raw_text.split("\n", 1)[-1]  # remover primeira linha
-                raw_text = raw_text.rsplit("```", 1)[0]  # remover última linha
-                raw_text = raw_text.strip()
-
-            result = json.loads(raw_text)
-
-            # Validar e enriquecer resultado
-            result = self._validate_result(result)
+            # Enriquecer com angle do carrossel
+            result = self._enrich_result(result)
 
             logger.info(
                 f"✅ Classificação: {result['category']} "
@@ -110,23 +98,18 @@ class WasteClassifier:
 
             return result
 
-        except json.JSONDecodeError as e:
-            logger.error(f"❌ Resposta do Gemini não é JSON válido: {e}")
-            logger.error(f"   Resposta bruta: {raw_text}")
-            return self._fallback_result("Erro ao interpretar resposta da IA")
-
         except Exception as e:
             logger.error(f"❌ Erro na classificação: {e}")
             return self._fallback_result(str(e))
 
-    def _validate_result(self, result):
-        """Valida e enriquece o resultado da classificação.
+    def _enrich_result(self, result):
+        """Valida e enriquece o resultado com o ângulo do carrossel.
 
         Args:
-            result: Dict com o resultado bruto do Gemini.
+            result: Dict com o resultado do Gemini.
 
         Returns:
-            dict: Resultado validado e enriquecido com angle.
+            dict: Resultado enriquecido com angle.
         """
         category = result.get("category", "nao_reciclavel")
 
@@ -142,7 +125,7 @@ class WasteClassifier:
         if category in self.categories:
             angle = self.categories[category]["angle"]
         else:
-            angle = 0  # posição padrão para não reciclável
+            angle = 0
 
         return {
             "category": category,
@@ -153,14 +136,7 @@ class WasteClassifier:
         }
 
     def _fallback_result(self, error_msg):
-        """Resultado de fallback quando a classificação falha.
-
-        Args:
-            error_msg: Mensagem de erro para o log.
-
-        Returns:
-            dict: Resultado padrão (não reciclável, baixa confiança).
-        """
+        """Resultado de fallback quando a classificação falha."""
         return {
             "category": "nao_reciclavel",
             "confidence": 0.0,
