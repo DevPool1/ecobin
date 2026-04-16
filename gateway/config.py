@@ -56,10 +56,10 @@ class Config:
     # --- Categorias de Resíduos ---
     # Mapeamento categoria → ângulo do carrossel
     WASTE_CATEGORIES = {
-        "plastico": {"angle": 0, "color": "#FFFF00", "label": "Plástico"},
-        "papel": {"angle": 90, "color": "#0000FF", "label": "Papel/Cartão"},
+        "plastico": {"angle": 0, "color": "#FFFF00", "label": "Plástico & Metal"},
+        "papel": {"angle": 90, "color": "#0000FF", "label": "Papel & Cartão"},
         "vidro": {"angle": 180, "color": "#00FF00", "label": "Vidro"},
-        "organico": {"angle": 270, "color": "#8B4513", "label": "Orgânico"},
+        "indiferenciado": {"angle": 270, "color": "#333333", "label": "Indiferenciado"},
     }
 
     # --- Base de Dados ---

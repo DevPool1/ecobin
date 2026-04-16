@@ -156,22 +156,16 @@ class EcobinGateway:
                 result,
             )
 
-            # ── 4. Comandar motor (se categoria válida) ──
-            if result["category"] != "nao_reciclavel" and result["confidence"] > 0.5:
-                motor_cmd = f"rotate:{result['angle']}"
-                self.mqtt.publish(Config.Topics.MOTOR_COMMAND, motor_cmd)
-                logger.info(f"⚙️  Motor → {motor_cmd}")
+            # ── 4. Comandar motor (Sempre move para a categoria) ──
+            motor_cmd = f"rotate:{result['angle']}"
+            self.mqtt.publish(Config.Topics.MOTOR_COMMAND, motor_cmd)
+            logger.info(f"⚙️  Motor → {motor_cmd} ({result['category']})")
 
-                # Esperar um pouco e abrir servo
-                time.sleep(2)
-                self.mqtt.publish(Config.Topics.SERVO_COMMAND, "open")
-                time.sleep(1)
-                self.mqtt.publish(Config.Topics.SERVO_COMMAND, "close")
-            else:
-                logger.warning(
-                    f"⚠️  Resíduo rejeitado: {result['category']} "
-                    f"(confiança: {result['confidence']:.0%})"
-                )
+            # Esperar um pouco e abrir servo
+            time.sleep(2)
+            self.mqtt.publish(Config.Topics.SERVO_COMMAND, "open")
+            time.sleep(1)
+            self.mqtt.publish(Config.Topics.SERVO_COMMAND, "close")
 
             # ── 5. Registar na base de dados ─────────
             record_id = self.db.log_classification(result, image_path)

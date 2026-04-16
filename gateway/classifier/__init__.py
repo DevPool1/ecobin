@@ -16,14 +16,15 @@ from google.genai import types
 logger = logging.getLogger("ecobin.classifier")
 
 # Prompt otimizado para ecrã OLED (SSD1306 128x64) e Gamificação (Eco-points)
-CLASSIFICATION_PROMPT = """Classifica o resíduo num destes: plastico, papel, vidro, organico, ou nao_reciclavel.
+CLASSIFICATION_PROMPT = """Classifica o resíduo num destes contentores: plastico, papel, vidro, ou indiferenciado.
 Responde APENAS com um JSON minificado:
 {"cat":"plastico","oled":"Garrafa d'Agua","pts":50}
 
 Regras:
-1. "oled": Nome EXATO e específico do objeto, mas conciso (1 a 3 palavras, máx 20 letras) para caber no OLED. Ex: "Toalhita Usada", "Lata Cola", "Papel Amassado".
-2. "pts": Gamificação! plastico/papel/vidro = 50, organico = 10, nao_reciclavel = 0.
-3. Se não houver resíduo claro, cat="nao_reciclavel", oled="Vazio", pts=0.
+1. "cat": OBRIGATORIAMENTE "plastico", "papel", "vidro" ou "indiferenciado".
+2. "oled": Nome EXATO e específico do objeto (1 a 3 palavras, máx 20 letras) para caber no OLED. Ex: "Toalhita Usada", "Lata Cola".
+3. "pts": Gamificação! plastico/papel/vidro = 50, indiferenciado = 0.
+4. Orgânicos, lixo sujo (ex: guardanapapos usados) ou não reciclável vão para "indiferenciado" (0 pts).
 """
 
 class WasteClassifier:
@@ -68,26 +69,26 @@ class WasteClassifier:
             return self._fallback_result(str(e))
 
     def _validate_result(self, result):
-        category = result.get("cat", result.get("category", "nao_reciclavel"))
-        if category not in self.categories and category != "nao_reciclavel":
-            logger.warning(f"Categoria desconhecida: {category} → nao_reciclavel")
-            category = "nao_reciclavel"
+        category = result.get("cat", result.get("category", "indiferenciado"))
+        if category not in self.categories and category != "indiferenciado":
+            logger.warning(f"Categoria desconhecida: {category} → indiferenciado")
+            category = "indiferenciado"
 
         return {
             "category": category,
-            "confidence": 0.9 if category != "nao_reciclavel" else 0.0, # Simplificação para OLED
+            "confidence": 0.9 if category != "indiferenciado" else 0.0, # Simplificação para OLED
             "description": result.get("oled", "Objeto"),
             "recyclable": category in ["plastico", "papel", "vidro"],
-            "angle": self.categories[category]["angle"] if category in self.categories else 0,
+            "angle": self.categories[category]["angle"] if category in self.categories else 270,
             "points": result.get("pts", 0)
         }
 
     def _fallback_result(self, error_msg):
         return {
-            "category": "nao_reciclavel",
+            "category": "indiferenciado",
             "confidence": 0.0,
             "description": "Erro IA",
             "recyclable": False,
-            "angle": 0,
+            "angle": 270,
             "points": 0
         }
