@@ -6,7 +6,7 @@
 // Lê o Sensor Ultrassónico para reportar o nível do lixo.
 // ============================================
 
-#include <WiFi.h>
+#include <WiFiS3.h>
 #include <PubSubClient.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
