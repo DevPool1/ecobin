@@ -1,8 +1,8 @@
 # ============================================
 # ECOBIN — Classificador de Resíduos (Gemini)
 # ============================================
-# Usa JSON mode nativo do Gemini para respostas
-# estruturadas — menos tokens, mais fiável.
+# Usa a API Google Gemini 2.0 Flash para
+# classificar resíduos a partir de imagens JPEG.
 # ============================================
 
 import json
@@ -15,85 +15,50 @@ from google.genai import types
 
 logger = logging.getLogger("ecobin.classifier")
 
-# Prompt curto — o schema JSON faz o resto
-CLASSIFICATION_PROMPT = (
-    "Classifica o resíduo na imagem. "
-    "Categorias: plastico, papel, vidro, organico, nao_reciclavel."
-)
+# Prompt otimizado para ecrã OLED (SSD1306 128x64) e Gamificação (Eco-points)
+CLASSIFICATION_PROMPT = """Classifica o resíduo num destes: plastico, papel, vidro, organico, ou nao_reciclavel.
+Responde APENAS com um JSON minificado:
+{"cat":"plastico","oled":"Garrafa","pts":50}
 
-# Schema que o Gemini deve seguir (garante JSON válido)
-RESPONSE_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "category": {
-            "type": "string",
-            "enum": ["plastico", "papel", "vidro", "organico", "nao_reciclavel"],
-        },
-        "confidence": {"type": "number"},
-        "description": {"type": "string"},
-        "recyclable": {"type": "boolean"},
-    },
-    "required": ["category", "confidence", "description", "recyclable"],
-}
-
+Regras:
+1. "oled": Nome ultra-curto do objeto (máximo 14 letras) para caber na perfeição no ecrã OLED.
+2. "pts": Gamificação! plastico/papel/vidro = 50, organico = 10, nao_reciclavel = 0.
+3. Se não houver resíduo claro, cat="nao_reciclavel", oled="Vazio", pts=0.
+"""
 
 class WasteClassifier:
-    """Classificador de resíduos usando Google Gemini com JSON mode.
-
-    Usa response_mime_type="application/json" + response_schema
-    para respostas estruturadas — ~70% menos tokens que prompt text.
-    """
+    """Classificador de resíduos usando Google Gemini 2.5 Flash."""
 
     def __init__(self, config):
-        """Inicializa o classificador com a API key do Gemini.
-
-        Args:
-            config: Objeto Config com GEMINI_API_KEY e GEMINI_MODEL.
-        """
         self.model_name = config.GEMINI_MODEL
         self.categories = config.WASTE_CATEGORIES
-
-        # Inicializar cliente Gemini (SDK moderno google-genai)
         self.client = genai.Client(api_key=config.GEMINI_API_KEY)
-
         logger.info(f"🤖 Classificador inicializado (modelo: {self.model_name})")
 
     def classify(self, jpeg_bytes):
-        """Classifica um resíduo a partir de uma imagem JPEG.
-
-        Args:
-            jpeg_bytes: Bytes da imagem JPEG capturada pelo ESP32-CAM.
-
-        Returns:
-            dict: Resultado com category, confidence, description,
-                  recyclable, angle.
-        """
         try:
-            # Converter bytes JPEG para imagem PIL
             image = Image.open(BytesIO(jpeg_bytes))
-            logger.info(
-                f"🔍 A classificar imagem ({image.size[0]}x{image.size[1]})..."
-            )
+            logger.info(f"🔍 A classificar imagem ({image.size[0]}x{image.size[1]})...")
 
-            # Chamar Gemini com JSON mode nativo
             response = self.client.models.generate_content(
                 model=self.model_name,
                 contents=[CLASSIFICATION_PROMPT, image],
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    response_schema=RESPONSE_SCHEMA,
-                ),
             )
 
-            # Parse direto — JSON mode garante formato válido
-            result = json.loads(response.text)
+            raw_text = response.text.strip()
+            logger.debug(f"Resposta bruta do Gemini: {raw_text}")
 
-            # Enriquecer com angle do carrossel
-            result = self._enrich_result(result)
+            if raw_text.startswith("```"):
+                raw_text = raw_text.split("\n", 1)[-1]
+                raw_text = raw_text.rsplit("```", 1)[0]
+                raw_text = raw_text.strip()
+
+            result = json.loads(raw_text)
+            result = self._validate_result(result)
 
             logger.info(
                 f"✅ Classificação: {result['category']} "
-                f"({result['confidence']:.0%}) — {result['description']}"
+                f"| Ecrã: {result['description']} | Pontos: +{result['points']} ECO"
             )
 
             return result
@@ -102,45 +67,27 @@ class WasteClassifier:
             logger.error(f"❌ Erro na classificação: {e}")
             return self._fallback_result(str(e))
 
-    def _enrich_result(self, result):
-        """Valida e enriquece o resultado com o ângulo do carrossel.
-
-        Args:
-            result: Dict com o resultado do Gemini.
-
-        Returns:
-            dict: Resultado enriquecido com angle.
-        """
-        category = result.get("category", "nao_reciclavel")
-
-        # Garantir que a categoria é válida
+    def _validate_result(self, result):
+        category = result.get("cat", result.get("category", "nao_reciclavel"))
         if category not in self.categories and category != "nao_reciclavel":
             logger.warning(f"Categoria desconhecida: {category} → nao_reciclavel")
             category = "nao_reciclavel"
 
-        # Garantir confiança entre 0 e 1
-        confidence = max(0.0, min(1.0, float(result.get("confidence", 0.5))))
-
-        # Obter ângulo do carrossel
-        if category in self.categories:
-            angle = self.categories[category]["angle"]
-        else:
-            angle = 0
-
         return {
             "category": category,
-            "confidence": confidence,
-            "description": result.get("description", "Objeto não identificado"),
-            "recyclable": result.get("recyclable", False),
-            "angle": angle,
+            "confidence": 0.9 if category != "nao_reciclavel" else 0.0, # Simplificação para OLED
+            "description": result.get("oled", "Objeto"),
+            "recyclable": category in ["plastico", "papel", "vidro"],
+            "angle": self.categories[category]["angle"] if category in self.categories else 0,
+            "points": result.get("pts", 0)
         }
 
     def _fallback_result(self, error_msg):
-        """Resultado de fallback quando a classificação falha."""
         return {
             "category": "nao_reciclavel",
             "confidence": 0.0,
-            "description": f"Erro: {error_msg}",
+            "description": "Erro IA",
             "recyclable": False,
             "angle": 0,
+            "points": 0
         }
