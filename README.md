@@ -146,7 +146,7 @@ sequenceDiagram
 
 ```bash
 # Clone the repository
-git clone https://github.com/<YOUR_USERNAME>/ecobin.git
+git clone https://github.com/DevPool1/ecobin.git
 cd ecobin
 
 # Set up the gateway (Raspberry Pi)
