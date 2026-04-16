@@ -29,7 +29,7 @@
 
 ## 🇵🇹 Sobre
 
-> **Projeto académico** para a unidade curricular **Laboratório IoT** — Universidade do Algarve (UAlg), Licenciatura em Engenharia de Sistemas e Tecnologias de Informação (LESTI).
+> **Projeto académico** para a unidade curricular **Laboratório IoT** — Universidade do Algarve (UAlg).
 
 O **ECOBIN** é um contentor de lixo inteligente que classifica resíduos automaticamente usando visão computacional e IA (Google Gemini 2.0 Flash). O sistema captura uma imagem do resíduo depositado, classifica-o em 4 categorias, e aciona um carrossel mecânico rotativo para depositar o lixo no compartimento correto — tudo de forma autónoma.
 
@@ -55,10 +55,10 @@ The ECOBIN uses a **distributed architecture** with 4 hardware nodes communicati
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Wi-Fi Network (MQTT)                      │
+│                    Wi-Fi Network (MQTT)                     │
 ├─────────────┬──────────────┬──────────────┬─────────────────┤
 │             │              │              │                 │
-│  📷 Vision  │ ⚙️ Container │ 🖥️ Interface │ 🧠 Gateway      │
+│  📷 Vision  │ ⚙️ Container│ 🖥️ Interface │ 🧠 Gateway     │
 │  ESP32-CAM  │ ESP32-WROOM  │ Arduino R4   │ Raspberry Pi    │
 │             │              │   WiFi       │                 │
 │ • Camera    │ • Stepper    │ • OLED       │ • MQTT Broker   │
@@ -146,7 +146,7 @@ sequenceDiagram
 
 ```bash
 # Clone the repository
-git clone https://github.com/DevPool1/ecobin.git
+git clone https://github.com/<YOUR_USERNAME>/ecobin.git
 cd ecobin
 
 # Set up the gateway (Raspberry Pi)
