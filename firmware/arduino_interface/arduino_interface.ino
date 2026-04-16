@@ -126,7 +126,10 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   String message;
   for (unsigned int i = 0; i < length; i++) message += (char)payload[i];
   
-  Serial.printf("[MQTT] %s -> %s\n", topic, message.c_str());
+  Serial.print("[MQTT] ");
+  Serial.print(topic);
+  Serial.print(" -> ");
+  Serial.println(message.c_str());
 
   if (String(topic) == TOPIC_SYS_STATUS) {
     currentSystemStatus = message;
