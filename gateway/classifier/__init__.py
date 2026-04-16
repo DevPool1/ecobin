@@ -18,10 +18,10 @@ logger = logging.getLogger("ecobin.classifier")
 # Prompt otimizado para ecrã OLED (SSD1306 128x64) e Gamificação (Eco-points)
 CLASSIFICATION_PROMPT = """Classifica o resíduo num destes: plastico, papel, vidro, organico, ou nao_reciclavel.
 Responde APENAS com um JSON minificado:
-{"cat":"plastico","oled":"Garrafa","pts":50}
+{"cat":"plastico","oled":"Garrafa d'Agua","pts":50}
 
 Regras:
-1. "oled": Nome ultra-curto do objeto (máximo 14 letras) para caber na perfeição no ecrã OLED.
+1. "oled": Nome EXATO e específico do objeto, mas conciso (1 a 3 palavras, máx 20 letras) para caber no OLED. Ex: "Toalhita Usada", "Lata Cola", "Papel Amassado".
 2. "pts": Gamificação! plastico/papel/vidro = 50, organico = 10, nao_reciclavel = 0.
 3. Se não houver resíduo claro, cat="nao_reciclavel", oled="Vazio", pts=0.
 """
