@@ -1,6 +1,9 @@
 # ECOBIN Gateway — Dependências Python
 # ======================================
 
+# Broker MQTT embutido (substitui Mosquitto)
+amqtt>=0.11.0
+
 # MQTT Client (v2.0+ com CallbackAPIVersion)
 paho-mqtt>=2.0.0
 

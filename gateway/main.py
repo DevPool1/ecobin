@@ -2,31 +2,35 @@
 # ECOBIN — Gateway Inteligente (Raspberry Pi)
 # ============================================
 # Ponto de entrada do sistema gateway.
-# Orquestra: MQTT ↔ ESP32-CAM ↔ Gemini ↔ SQLite
+# Orquestra: Broker MQTT + ESP32-CAM + Gemini + SQLite
+#
+# Baseado no trabalho existente em ~/lixo-ia/
 # ============================================
 
 """
 ECOBIN Gateway — Entry Point
 
 Sequência de operação:
-1. Inicializa configuração, MQTT, câmara, classificador, base de dados
-2. Subscreve tópico MQTT "ecobin/cam/ready"
+1. Inicia broker MQTT embutido (amqtt — sem precisar de Mosquitto)
+2. Inicia cliente MQTT e subscreve tópicos
 3. Quando ESP32-CAM notifica resíduo detetado:
    a. Captura imagem via HTTP GET ao ESP32-CAM
    b. Classifica via Gemini 2.0 Flash
    c. Publica resultado no MQTT
-   d. Envia comando ao motor (ângulo do carrossel)
-   e. Regista na base de dados SQLite
+   d. Regista na base de dados SQLite
 4. Aguarda próximo evento
 """
 
+import asyncio
 import json
 import time
 import signal
 import logging
 import sys
+import threading
 
 from config import Config
+from broker import start_broker, stop_broker
 from mqtt import MQTTClient
 from camera_client import CameraClient
 from classifier import WasteClassifier
@@ -46,11 +50,7 @@ logger = logging.getLogger("ecobin.main")
 
 
 class EcobinGateway:
-    """Orquestrador principal do gateway ECOBIN.
-
-    Coordena a comunicação entre ESP32-CAM, Gemini API,
-    MQTT e base de dados SQLite.
-    """
+    """Orquestrador principal do gateway ECOBIN."""
 
     def __init__(self):
         """Inicializa todos os componentes do gateway."""
@@ -68,23 +68,34 @@ class EcobinGateway:
 
         # Estado do sistema
         self._processing = False
+        self._broker = None
 
         # Registar callback para quando o ESP32-CAM deteta resíduo
         self.mqtt.set_waste_detected_callback(self._on_waste_detected)
 
     def start(self):
-        """Arranca o gateway e fica à escuta de eventos."""
+        """Arranca o broker MQTT e o gateway."""
         try:
-            # Conectar ao MQTT
+            # 1. Iniciar broker MQTT embutido (amqtt)
+            logger.info("🔄 A iniciar broker MQTT embutido...")
+            self._broker_thread = threading.Thread(
+                target=self._run_broker, daemon=True
+            )
+            self._broker_thread.start()
+
+            # Esperar que o broker arranque
+            time.sleep(2)
+
+            # 2. Conectar cliente MQTT ao broker local
             self.mqtt.connect()
 
-            # Registar evento de startup
+            # 3. Registar evento de startup
             self.db.log_event("startup", "Gateway iniciado com sucesso")
 
             logger.info("🟢 Gateway ativo — à espera de resíduos...")
             logger.info("   Prima Ctrl+C para parar.\n")
 
-            # Loop principal — mantém o programa a correr
+            # Loop principal
             while True:
                 time.sleep(0.1)
 
@@ -92,17 +103,29 @@ class EcobinGateway:
             logger.info("\n⛔ A encerrar gateway...")
         except Exception as e:
             logger.error(f"❌ Erro fatal: {e}")
+            import traceback
+            traceback.print_exc()
             self.db.log_event("error", str(e))
         finally:
             self._shutdown()
 
+    def _run_broker(self):
+        """Corre o broker MQTT numa thread separada com o seu próprio event loop."""
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            self._broker = loop.run_until_complete(start_broker())
+            loop.run_forever()
+        except Exception as e:
+            logger.error(f"❌ Erro no broker: {e}")
+
     def _on_waste_detected(self, payload):
         """Callback chamado quando o ESP32-CAM deteta um resíduo.
 
-        Esta é a sequência principal de classificação:
+        Sequência:
         1. Captura imagem via HTTP
         2. Classifica via Gemini
-        3. Comanda motor via MQTT
+        3. Publica resultado no MQTT
         4. Regista na base de dados
 
         Args:
@@ -139,8 +162,8 @@ class EcobinGateway:
                 self.mqtt.publish(Config.Topics.MOTOR_COMMAND, motor_cmd)
                 logger.info(f"⚙️  Motor → {motor_cmd}")
 
-                # Esperar confirmação do motor e abrir servo
-                time.sleep(2)  # TODO: substituir por espera via MQTT
+                # Esperar um pouco e abrir servo
+                time.sleep(2)
                 self.mqtt.publish(Config.Topics.SERVO_COMMAND, "open")
                 time.sleep(1)
                 self.mqtt.publish(Config.Topics.SERVO_COMMAND, "close")
@@ -167,6 +190,8 @@ class EcobinGateway:
 
         except Exception as e:
             logger.error(f"❌ Erro na classificação: {e}")
+            import traceback
+            traceback.print_exc()
             self.mqtt.publish(Config.Topics.SYSTEM_STATUS, "error")
             self.db.log_event("error", str(e))
 
