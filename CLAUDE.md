@@ -175,11 +175,12 @@ O sistema mantém funcionalidade básica sem Internet:
 ### ✅ O que já está feito e testado a 100%:
 1. **Infraestrutura CI/CD:** Repositório GitHub montado com GitHub Actions a validar sintaxe Python (com `black`) e a compilar o Arduino/ESP32. Script de auto-commit (`scripts/`) a funcionar.
 2. **Nó de Visão (ESP32-CAM-MB):**
-   - Firmware testado e carregado na ESP32-CAM usando a *motherboard* MB (botões integrados).
-   - Servidor HTTP a expor as imagens no endpoint `/capture` através do Wi-Fi da casa.
-3. **Gateway Python (O "Cérebro"):**
+   - **Sucesso de Hardware:** Firmware testado e carregado na ESP32-CAM usando a *motherboard* MB (sem necessidade de jumpers, usando os botões integrados).
+   - O servidor HTTP da câmara está robusto, a expor as imagens no endpoint `/capture` e ligado de forma estável através do Wi-Fi de casa.
+3. **Gateway Python e Broker (O "Cérebro" no Raspberry Pi / PC):**
+   - **Instalação e Teste do Broker:** O broker MQTT embebido (`amqtt`) foi instalado com sucesso no ambiente e está a correr perfeitamente.
+   - **Comunicação validada:** A ESP32-CAM-MB conseguiu ligar-se e enviar/receber dados perfeitamente para o Broker.
    - Código central (`gateway/main.py`) perfeitamente funcional.
-   - Broker MQTT embebido (`amqtt`) a gerir as conexões locais (IP `127.0.0.1` ou `192.168.1.x`).
    - Integração confirmada com o **Gemini 2.5 Flash** (via API) a devolver o JSON estruturado (`categoria`, `descrição curta`, `eco-pontos`).
    - Guardar histórico de classificações numa base de dados `SQLite`.
    - **Teste de pipeline completo validado:** O trigger foi simulado com o script `trigger_test.py`, o Gateway foi à ESP32-CAM buscar a imagem, a IA identificou uma *Garrafa de Água* (Plástico, 50 pts) e emitiu o comando MQTT para o motor (`rotate:0`).
