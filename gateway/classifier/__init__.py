@@ -22,9 +22,10 @@ Responde APENAS com um JSON minificado:
 
 Regras:
 1. "cat": OBRIGATORIAMENTE "plastico", "papel", "vidro" ou "indiferenciado".
-2. "oled": Nome EXATO e específico do objeto (1 a 3 palavras, máx 20 letras) para caber no OLED. Ex: "Toalhita Usada", "Lata Cola".
+2. "oled": Nome EXATO e específico do objeto (1 a 3 palavras, máx 20 letras). Tem de refletir o teu escrutínio físico do objeto!
 3. "pts": Gamificação! plastico/papel/vidro = 50, indiferenciado = 0.
-4. Orgânicos, lixo sujo (ex: guardanapapos usados) ou não reciclável vão para "indiferenciado" (0 pts).
+4. Orgânicos, lixo sujo (ex: guardanapos usados) ou não reciclável vão para "indiferenciado" (0 pts).
+5. PRECISÃO EXTREMA DE MATERIAL: Analisa a textura da imagem detalhadamente. Distingue visualmente, por exemplo, um lenço de papel celulose (quebradiço) de uma toalhita húmida (tecido não-tecido tipo pano, elástico e sem brilho). O nome tem de ser o mais perito possível.
 """
 
 class WasteClassifier:
