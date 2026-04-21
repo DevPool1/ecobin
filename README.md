@@ -29,7 +29,7 @@
 
 ## 🇵🇹 Sobre
 
-> **Projeto académico** para a unidade curricular **Laboratório IoT** — Universidade do Algarve (UAlg), Licenciatura em Engenharia de Sistemas e Tecnologias de Informação (LESTI).
+> **Projeto académico** para a unidade curricular **Laboratório IoT** — Universidade do Algarve (UAlg)
 
 O **ECOBIN** é um contentor de lixo inteligente que classifica resíduos automaticamente usando visão computacional e IA (Google Gemini 2.0 Flash). O sistema captura uma imagem do resíduo depositado, classifica-o em 4 categorias, e aciona um carrossel mecânico rotativo para depositar o lixo no compartimento correto — tudo de forma autónoma.
 
