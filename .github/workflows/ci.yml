@@ -78,8 +78,9 @@ jobs:
             - name: PubSubClient
             - name: ArduinoJson
             - name: Adafruit NeoPixel
+            - name: Adafruit GFX Library
             - name: Adafruit SSD1306
-            - name: Stepper
+            - name: ESP32Servo
 
   # ── Documentation Check ────────────────────
   docs-check:
