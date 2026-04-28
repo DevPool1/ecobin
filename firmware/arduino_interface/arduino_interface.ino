@@ -254,7 +254,7 @@ void loop() {
   if (motionDetected) {
     motionDetected = false; 
     if (currentSystemStatus == "idle") {
-      Serial.println("[PIR] Ojeto detetado! A acordar o Gateway...");
+      Serial.println("[PIR] Objeto detetado! A acordar o Gateway...");
       mqttClient.publish(TOPIC_CAM_READY, "waste_detected");
       
       // O Gateway vai agora mudar o estado para "classifying"

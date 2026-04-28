@@ -30,7 +30,7 @@ Regras:
 
 
 class WasteClassifier:
-    """Classificador de resíduos usando Google Gemini 2.5 Flash."""
+    """Classificador de resíduos usando Google Gemini 2.0 Flash."""
 
     def __init__(self, config):
         self.model_name = config.GEMINI_MODEL
