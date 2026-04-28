@@ -167,3 +167,30 @@ O sistema mantém funcionalidade básica sem Internet:
 - Priorizar soluções simples e robustas em vez de over-engineering
 - Todo o código deve ser bem comentado em português
 - O Raspberry Pi é o broker central — toda a inteligência passa por ele
+
+---
+
+## 📌 Diário de Bordo / Estado Atual (17 Abril 2026)
+
+### ✅ O que já está feito e testado a 100%:
+1. **Infraestrutura CI/CD:** Repositório GitHub montado com GitHub Actions a validar sintaxe Python (com `black`) e a compilar o Arduino/ESP32. Script de auto-commit (`scripts/`) a funcionar.
+2. **Nó de Visão (ESP32-CAM-MB):**
+   - **Sucesso de Hardware:** Firmware testado e carregado na ESP32-CAM usando a *motherboard* MB (sem necessidade de jumpers, usando os botões integrados).
+   - O servidor HTTP da câmara está robusto, a expor as imagens no endpoint `/capture` e ligado de forma estável através do Wi-Fi de casa.
+3. **Gateway Python e Broker (O "Cérebro" no Raspberry Pi / PC):**
+   - **Instalação e Teste do Broker:** O broker MQTT embebido (`amqtt`) foi instalado com sucesso no ambiente e está a correr perfeitamente.
+   - **Comunicação validada:** A ESP32-CAM-MB conseguiu ligar-se e enviar/receber dados perfeitamente para o Broker.
+   - Código central (`gateway/main.py`) perfeitamente funcional.
+   - Integração confirmada com o **Gemini 2.5 Flash** (via API) a devolver o JSON estruturado (`categoria`, `descrição curta`, `eco-pontos`).
+   - Guardar histórico de classificações numa base de dados `SQLite`.
+   - **Teste de pipeline completo validado:** O trigger foi simulado com o script `trigger_test.py`, o Gateway foi à ESP32-CAM buscar a imagem, a IA identificou uma *Garrafa de Água* (Plástico, 50 pts) e emitiu o comando MQTT para o motor (`rotate:0`).
+
+### 🚀 O Próximo Passo Imediato (Onde retomar):
+**Fase 3: O Nó de Contentor (ESP32-WROOM)**
+Como o hardware do ecrã OLED ainda não está disponível, a próxima sessão de trabalho deve focar-se em programar a **ESP32-WROOM** (`firmware/esp32_contentor/esp32_contentor.ino`). 
+
+Este código deve:
+1. Ligar-se ao Wi-Fi e ao Broker MQTT do Gateway.
+2. Controlar o **Motor de Passo (28BYJ-48)** com a biblioteca `<Stepper.h>` subscrevendo o tópico `ecobin/motor/command` (ex: rodar para 90º).
+3. Controlar o **Servo Motor (SG90)** atuando como a *trapdoor* da bandeja de triagem subscrevendo `ecobin/servo/command`.
+4. (*Opcional na 1ª iteração*) Ler o **Sensor Magnético (Reed Switch)** para garantir que o servo fechou.
